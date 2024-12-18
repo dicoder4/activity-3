@@ -1,52 +1,56 @@
+from flask import Flask, render_template, request
 from services.book_service import BookService
 from services.user_service import UserService
 
-def main():
-    print("Welcome to the Library Management System")
-    book_service = BookService()
-    user_service = UserService()
+app = Flask(__name__)
 
-    while True:
-        print("\nMain Menu:")
-        print("1. Add Book")
-        print("2. Remove Book")
-        print("3. Search Books")
-        print("4. Borrow Book")
-        print("5. Return Book")
-        print("6. View All Users")
-        print("7. Exit")
+book_service = BookService()
+user_service = UserService()
 
-        choice = input("Enter your choice: ")
-        if choice == "1":
-            title = input("Enter book title: ")
-            author = input("Enter author: ")
-            isbn = input("Enter ISBN: ")
-            book_service.add_book(title, author, isbn)
-        elif choice == "2":
-            isbn = input("Enter ISBN of the book to remove: ")
-            book_service.remove_book(isbn)
-        elif choice == "3":
-            query = input("Enter book title or author or ISBN: ")
-            results = book_service.search_books(query)
-            for book in results:
-                print(book)
-        elif choice == "4":
-            user_id = input("Enter user ID: ")
-            isbn = input("Enter ISBN of the book to borrow: ")
-            user_service.borrow_book(user_id, isbn)
-        elif choice == "5":
-            user_id = input("Enter user ID: ")
-            isbn = input("Enter ISBN of the book to return: ")
-            user_service.return_book(user_id, isbn)
-        elif choice == "6":
-            users = user_service.get_all_users()
-            for user in users:
-                print(user)
-        elif choice == "7":
-            print("Exiting the system. Goodbye!")
-            break
-        else:
-            print("Invalid choice! Please try again.")
+@app.route("/")
+def index():
+    return render_template("index.html")
+
+@app.route("/add-book", methods=["GET", "POST"])
+def add_book():
+    if request.method == "POST":
+        title = request.form["title"]
+        author = request.form["author"]
+        isbn = request.form["isbn"]
+        book_service.add_book(title, author, isbn)
+        return "Book added successfully!"
+    return render_template("add_book.html")
+
+@app.route("/remove-book", methods=["POST"])
+def remove_book():
+    isbn = request.form["isbn"]
+    book_service.remove_book(isbn)
+    return "Book removed successfully!"
+
+@app.route("/search-books", methods=["GET"])
+def search_books():
+    query = request.args.get("query")
+    results = book_service.search_books(query)
+    return render_template("search_books.html", results=results)
+
+@app.route("/borrow-book", methods=["POST"])
+def borrow_book():
+    user_id = request.form["user_id"]
+    isbn = request.form["isbn"]
+    user_service.borrow_book(user_id, isbn)
+    return "Book borrowed successfully!"
+
+@app.route("/return-book", methods=["POST"])
+def return_book():
+    user_id = request.form["user_id"]
+    isbn = request.form["isbn"]
+    user_service.return_book(user_id, isbn)
+    return "Book returned successfully!"
+
+@app.route("/view-users")
+def view_users():
+    users = user_service.get_all_users()
+    return render_template("view_users.html", users=users)
 
 if __name__ == "__main__":
-    main()
+    app.run(debug=True)
